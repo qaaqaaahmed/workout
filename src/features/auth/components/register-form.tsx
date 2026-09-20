@@ -19,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { authClient } from "@/lib/auth-client";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -84,10 +85,22 @@ export const RegisterForm = () => {
               <div className="grid gap-6">
                 <div className="flex flex-col gap-4">
                   <Button type="button" variant="outline" disabled={isPending}>
-                    Get started with Github
+                    <Image
+                      src={`/logos/github.svg`}
+                      alt="GitHub"
+                      width={24}
+                      height={24}
+                    />
+                    Get started with GitHub
                   </Button>
 
                   <Button type="button" variant="outline" disabled={isPending}>
+                    <Image
+                      src={`/logos/google.svg`}
+                      alt="Google"
+                      width={24}
+                      height={24}
+                    />
                     Get started with Google
                   </Button>
                 </div>
@@ -147,7 +160,7 @@ export const RegisterForm = () => {
                     )}
                   />
 
-                  <Button type="submit" variant="outline" disabled={isPending}>
+                  <Button type="submit" disabled={isPending}>
                     Sign up
                   </Button>
                 </div>
