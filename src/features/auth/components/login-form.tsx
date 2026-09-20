@@ -23,6 +23,7 @@ import Link from "next/link";
 import { authClient } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import Image from "next/image";
 
 const loginFormSchema = z.object({
   email: z.email({ error: "Email is required" }),
@@ -79,7 +80,13 @@ export const LoginForm = () => {
                     variant="outline"
                     type="button"
                   >
-                    Continue with Github
+                    <Image
+                      src={`/logos/github.svg`}
+                      alt="GitHub"
+                      width={24}
+                      height={24}
+                    />
+                    Continue with GitHub
                   </Button>
                   <Button
                     disabled={isPending}
@@ -87,6 +94,12 @@ export const LoginForm = () => {
                     variant="outline"
                     type="button"
                   >
+                    <Image
+                      src={`/logos/google.svg`}
+                      alt="Google"
+                      width={24}
+                      height={24}
+                    />
                     Continue with Google
                   </Button>
                 </div>
