@@ -141,7 +141,9 @@ export const LoginForm = () => {
                     )}
                   />
 
-                  <Button type="submit">Login</Button>
+                  <Button type="submit" disabled={isPending}>
+                    Login
+                  </Button>
                 </div>
 
                 <div className="text-center text-sm">

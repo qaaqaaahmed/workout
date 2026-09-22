@@ -5,10 +5,10 @@ import { Suspense } from "react";
 import { requireAuth } from "@/lib/auth-utils";
 
 export default async function Home() {
-  await requireAuth();
+  // await requireAuth();
   const queryClient = getQueryClient();
 
-  void queryClient.prefetchQuery(trpc.getUsers.queryOptions());
+  void queryClient.prefetchQuery(trpc.getWorkflows.queryOptions());
   return (
     <HydrationBoundary state={dehydrate(queryClient)}>
       <Suspense fallback={<p>loading...</p>}>

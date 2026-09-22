@@ -6,7 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build --turbopack",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "inngest:dev": "npx inngest-cli dev",
+    "dev:all": "mprocs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
@@ -25,6 +27,7 @@
     "date-fns": "^4.4.0",
     "dotenv": "^18.0.1",
     "embla-carousel-react": "^8.6.0",
+    "inngest": "^4.20.0",
     "input-otp": "^1.5.0",
     "lucide-react": "^1.47.0",
     "next": "15.5.4",
@@ -51,6 +54,7 @@
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
+    "mprocs": "^0.9.6",
     "prisma": "^6.16.3",
     "shadcn": "^4.21.0",
     "tailwindcss": "^4",
