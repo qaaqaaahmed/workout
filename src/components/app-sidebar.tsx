@@ -22,6 +22,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
+import { useHasActiveSubscription } from "@/features/subscriptions/hooks/use-subscription";
+import { useQueryClient } from "@tanstack/react-query";
 
 const menuItems = [
   {
@@ -49,6 +51,10 @@ const menuItems = [
 export const AppSidebar = () => {
   const pathname = usePathname();
   const router = useRouter();
+  const queryClient = useQueryClient();
+
+  const { isLoading, subscription, hasActiveSubscription } =
+    useHasActiveSubscription();
 
   return (
     <Sidebar collapsible="icon">
@@ -97,17 +103,24 @@ export const AppSidebar = () => {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton tooltip="Upgrade" className="h-10 px-4 gap-x-4">
-              <StarIcon />
-              <span>Upgrade to Pro</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {!hasActiveSubscription && !isLoading && (
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                tooltip="Upgrade"
+                className="h-10 px-4 gap-x-4"
+                onClick={() => authClient.checkout({ slug: "pro" })}
+              >
+                <StarIcon />
+                <span>Upgrade to Pro</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
+
           <SidebarMenuItem>
             <SidebarMenuButton
               tooltip="Billing portal"
               className="h-10 px-4 gap-x-4"
-              onClick={() => {}}
+              onClick={() => authClient.customer.portal()}
             >
               <CreditCardIcon className="size-4" />
               <span>Billing Portal</span>
@@ -122,6 +135,9 @@ export const AppSidebar = () => {
                 authClient.signOut({
                   fetchOptions: {
                     onSuccess: () => {
+                      queryClient.removeQueries({
+                        queryKey: ["subscription"],
+                      });
                       router.push("/login");
                     },
                   },
