@@ -8,6 +8,7 @@ import {
 import { toast } from "sonner";
 import { useWorkflowParams } from "./use-workflows-params";
 
+// hook to fetch all workflows
 export const useSuspenseWorkflows = () => {
   const trpc = useTRPC();
 
@@ -15,6 +16,8 @@ export const useSuspenseWorkflows = () => {
 
   return useSuspenseQuery(trpc.workflows.getMany.queryOptions(params));
 };
+
+// hook to create a workflow
 
 export const useCreateWorkflow = () => {
   const trpc = useTRPC();
@@ -28,6 +31,25 @@ export const useCreateWorkflow = () => {
       },
       onError: (error) => {
         toast.error(error.message);
+      },
+    }),
+  );
+};
+
+// hook to remove a workflow
+
+export const useRemoveWorkflow = () => {
+  const trpc = useTRPC();
+  const queryClient = useQueryClient();
+
+  return useMutation(
+    trpc.workflows.remove.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(`Workflow ${data.name} removed`);
+        queryClient.invalidateQueries(trpc.workflows.getMany.queryOptions({}));
+        queryClient.invalidateQueries(
+          trpc.workflows.getOne.queryFilter({ id: data.id }),
+        );
       },
     }),
   );

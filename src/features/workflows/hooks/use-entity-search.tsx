@@ -14,9 +14,9 @@ interface UseEntitySearchProps<
 
 // 1. If input was cleared → clear the real search url immediately.
 
-// 2. Otherwise wait 500ms → if localSearch and params.search differ, sync params.search to localSearch.
+// 2. Otherwise set a timer that waits 500ms → if localSearch and params.search differ, sync params.search to localSearch.
 
-// 3. If params.search changes externally → sync localSearch to it.
+// 3. another effect -> If params.search changes externally → sync localSearch to it.
 export function useEntitySearch<T extends { search: string; page: number }>({
   params,
   setParams,
@@ -45,11 +45,21 @@ export function useEntitySearch<T extends { search: string; page: number }>({
         });
       }
     }, debounceMs);
+
     return () => clearTimeout(timer);
   }, [debounceMs, localSearch, params, setParams]);
 
-  //if for whatever reason user updates the search from the url then we update the localsearch to be in sync with it
+  // if for whatever reason user updates the search from the url then we update the localsearch to be in sync with it
   useEffect(() => {
+    //you want to know why we have a seperate effect for this? well read below
+    //if you were to out this in the first effect then you would send the timer and before it even does anything,
+    // you would setLocalSearch to the currentvalue of params.search[which is before timer was sent] thereby resetting what user typed
+    //and cancelling the old timer.
+
+    // user types a, localSearch = "a" then the first if is only to clear so it doesnt run,
+    // it goes and schedules a timer, then imagine this is after the timer line, what happens?
+    //well, params.search = "", thereby setting localSearch = "", which rerenders the component, the effect runs, the old timer is cancelled,
+    // and its like the user never typed
     setLocalSearch(params.search);
   }, [params.search]);
 
@@ -58,31 +68,3 @@ export function useEntitySearch<T extends { search: string; page: number }>({
     onSearchValue: setLocalSearch,
   };
 }
-
-// const users = [
-//   {
-//     id: 1,
-//     name: "Mike",
-//     age: 31,
-//   },
-//   {
-//     id: 2,
-//     name: "John",
-//     age: 30,
-//   },
-// ];
-
-// const userToReplace = { id: 2, name: "Johnny", age: 28 };
-
-// function replaceById<T extends { id: number }>(
-//   users: T[],
-//   userToReplace: T,
-// ): T[] {
-//   return users.map((user) =>
-//     user.id === userToReplace.id ? userToReplace : user,
-//   );
-// }
-
-// const updatedUsers = replaceById(users, userToReplace);
-
-// console.log(updatedUsers);
