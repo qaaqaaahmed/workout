@@ -37,7 +37,76 @@ export const workflowsRouter = createTRPCRouter({
       });
     }),
 
-  update: protectedProcedure
+  updateWorkflow: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+        nodes: z.array(
+          z.object({
+            id: z.string(),
+            type: z.string().nullish(),
+            position: z.object({ x: z.number(), y: z.number() }),
+            data: z.record(z.string(), z.any()).optional(),
+          }),
+        ),
+
+        edges: z.array(
+          z.object({
+            id: z.string(),
+            source: z.string(),
+            target: z.string(),
+            sourceHandle: z.string().nullish(),
+            targetHandle: z.string().nullish(),
+          }),
+        ),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { id, nodes, edges } = input;
+
+      const workflow = await prisma.workflow.findUniqueOrThrow({
+        where: { id, userId: ctx.auth.user.id },
+      });
+
+      // a transaction to delete all nodes, create new nodes and connections
+      await prisma.$transaction(async (tx) => {
+        // delete all nodes
+        await tx.node.deleteMany({
+          where: { workflowId: id },
+        });
+
+        // create new nodes
+        await tx.node.createMany({
+          data: nodes.map((node) => ({
+            workflowId: id,
+            id: node.id,
+            name: node.type || "Unknown",
+            type: node.type as NodeType,
+            position: node.position,
+          })),
+        });
+
+        //create new connections
+        await tx.connection.createMany({
+          data: edges.map((edge) => ({
+            id: edge.id,
+            workflowId: id,
+            fromNodeId: edge.source,
+            toNodeId: edge.target,
+            fromOutput: edge.sourceHandle || "main",
+            toInput: edge.targetHandle || "main",
+          })),
+        });
+
+        await tx.workflow.update({
+          where: { id },
+          data: { updatedAt: new Date() },
+        });
+      });
+      return workflow;
+    }),
+
+  updateName: protectedProcedure
     .input(z.object({ name: z.string().min(1), id: z.string() }))
     .mutation(({ ctx, input }) => {
       return prisma.workflow.update({
