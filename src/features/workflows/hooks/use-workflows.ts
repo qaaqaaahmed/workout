@@ -68,7 +68,7 @@ export const useUpdateWorkflowName = () => {
   const queryClient = useQueryClient();
 
   return useMutation(
-    trpc.workflows.update.mutationOptions({
+    trpc.workflows.updateName.mutationOptions({
       onSuccess: (data) => {
         toast.message(`Workflow "${data.name}" updated`);
         queryClient.invalidateQueries(trpc.workflows.getMany.queryOptions({}));
@@ -78,6 +78,28 @@ export const useUpdateWorkflowName = () => {
       },
       onError: (error) => {
         toast.error(error.message);
+      },
+    }),
+  );
+};
+
+// hook to update a workflow
+export const useUpdateWorkflow = () => {
+  const queryClient = useQueryClient();
+  const trpc = useTRPC();
+
+  return useMutation(
+    trpc.workflows.updateWorkflow.mutationOptions({
+      onSuccess: (data) => {
+        toast.success(`Workflow "${data.name}" has been saved`);
+        queryClient.invalidateQueries(trpc.workflows.getMany.queryOptions({}));
+        queryClient.invalidateQueries(
+          trpc.workflows.getOne.queryOptions({ id: data.id }),
+        );
+      },
+
+      onError: (error) => {
+        toast.error(`Failed to save workflow: ${error.message}`);
       },
     }),
   );
