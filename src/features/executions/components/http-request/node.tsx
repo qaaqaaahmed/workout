@@ -6,12 +6,15 @@ import { BaseExecutionNode } from "../base-execution-node";
 import { GlobeIcon } from "lucide-react";
 import { FormSchemaType, HttpRequestDialog } from "./dialog";
 
-type HttpRequestNodeData = {
-  method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
-  endpoint?: string;
-  body?: string;
-};
+// type HttpRequestNodeData = {
+//   variableName?: string;
+//   method?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
+//   endpoint?: string;
+//   body?: string;
+// };
+// type HttpRequestNodeType = Node<HttpRequestNodeData>;
 
+type HttpRequestNodeData = Partial<FormSchemaType>;
 type HttpRequestNodeType = Node<HttpRequestNodeData>;
 
 export const HttpRequestNode = memo((props: NodeProps<HttpRequestNodeType>) => {
