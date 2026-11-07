@@ -24,6 +24,37 @@ import type { Workflow } from "@/generated/prisma/client";
 import { WorkflowIcon } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 
+export const WorkflowsHeader = ({ disabled }: { disabled?: boolean }) => {
+  const router = useRouter();
+  const createWorkflow = useCreateWorkflow();
+  const { handleError, modal } = useUpgradeModal();
+
+  const handleCreateWorkflow = () => {
+    createWorkflow.mutate(undefined, {
+      onSuccess: (data) => {
+        router.push(`/workflows/${data.id}`);
+      },
+      onError: (error) => {
+        //upgrade modal opens
+        handleError(error);
+      },
+    });
+  };
+  return (
+    <>
+      {modal}
+      <EntityHeader
+        title="Workflows"
+        description="Create and manage workflows"
+        newButtonLabel="Create workflow"
+        onNew={handleCreateWorkflow}
+        isCreating={false}
+        disabled={disabled}
+      />
+    </>
+  );
+};
+
 export const WorkflowsSearch = () => {
   const [params, setParams] = useWorkflowParams();
 
@@ -34,19 +65,6 @@ export const WorkflowsSearch = () => {
       value={searchValue}
       onChange={onSearchValue}
       placeholder="Search workflows"
-    />
-  );
-};
-
-export const WorkflowsPagination = () => {
-  const [params, setParams] = useWorkflowParams();
-  const workflows = useSuspenseWorkflows();
-  return (
-    <EntityPagination
-      page={workflows.data.page}
-      disabled={workflows.isFetching}
-      totalPages={workflows.data.totalPages}
-      onPageChange={(page) => setParams({ ...params, page: page })}
     />
   );
 };
@@ -92,34 +110,17 @@ export const WorflowItem = ({ data }: { data: Workflow }) => {
     />
   );
 };
-export const WorkflowsHeader = ({ disabled }: { disabled?: boolean }) => {
-  const router = useRouter();
-  const createWorkflow = useCreateWorkflow();
-  const { handleError, modal } = useUpgradeModal();
 
-  const handleCreateWorkflow = () => {
-    createWorkflow.mutate(undefined, {
-      onSuccess: (data) => {
-        router.push(`/workflows/${data.id}`);
-      },
-      onError: (error) => {
-        //upgrade modal opens
-        handleError(error);
-      },
-    });
-  };
+export const WorkflowsPagination = () => {
+  const [params, setParams] = useWorkflowParams();
+  const workflows = useSuspenseWorkflows();
   return (
-    <>
-      {modal}
-      <EntityHeader
-        title="Workflows"
-        description="Create and manage workflows"
-        newButtonLabel="Create workflow"
-        onNew={handleCreateWorkflow}
-        isCreating={false}
-        disabled={disabled}
-      />
-    </>
+    <EntityPagination
+      page={workflows.data.page}
+      disabled={workflows.isFetching}
+      totalPages={workflows.data.totalPages}
+      onPageChange={(page) => setParams({ ...params, page: page })}
+    />
   );
 };
 

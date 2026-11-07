@@ -39,6 +39,7 @@
     "inngest": "^4.20.0",
     "input-otp": "^1.5.0",
     "jotai": "^3.0.1",
+    "ky": "^2.2.0",
     "lucide-react": "^1.47.0",
     "next": "15.5.4",
     "next-themes": "^0.4.6",
@@ -56,6 +57,7 @@
     "server-only": "^0.0.1",
     "sonner": "^2.0.8",
     "superjson": "^2.2.6",
+    "toposort": "^2.0.2",
     "vaul": "^1.1.2",
     "zod": "^4.6.5"
   },
@@ -66,6 +68,7 @@
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/toposort": "^2.0.7",
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "mprocs": "^0.9.6",

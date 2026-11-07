@@ -1,5 +1,6 @@
 import { PAGINATION } from "@/config/constants";
 import { NodeType } from "@/generated/prisma/enums";
+import { inngest } from "@/inngest/client";
 import prisma from "@/lib/db";
 import {
   createTRPCRouter,
@@ -11,6 +12,27 @@ import { generateSlug } from "random-word-slugs";
 import z from "zod/v4";
 
 export const workflowsRouter = createTRPCRouter({
+  execute: protectedProcedure
+    .input(
+      z.object({
+        id: z.string(),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const workflow = await prisma.workflow.findUniqueOrThrow({
+        where: {
+          id: input.id,
+          userId: ctx.auth.user.id,
+        },
+      });
+
+      await inngest.send({
+        name: "workflows/execute.workflow",
+        data: { workflowId: workflow.id },
+      });
+
+      return workflow;
+    }),
   create: premiumProcedure.mutation(async ({ ctx }) => {
     return prisma.workflow.create({
       data: {
@@ -83,6 +105,7 @@ export const workflowsRouter = createTRPCRouter({
             name: node.type || "Unknown",
             type: node.type as NodeType,
             position: node.position,
+            data: node.data,
           })),
         });
 
@@ -103,6 +126,7 @@ export const workflowsRouter = createTRPCRouter({
           data: { updatedAt: new Date() },
         });
       });
+
       return workflow;
     }),
 

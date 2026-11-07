@@ -32,9 +32,7 @@ import { z } from "zod/v4";
 interface HttpRequestDialogProps {
   open: boolean;
   onOpenChange: (value: boolean) => void;
-  defaultMethod?: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
-  defaultUrl?: string;
-  defaultBody?: string;
+  defaultValues: Partial<FormSchemaType>;
   onSubmit: (values: FormSchemaType) => void;
 }
 
@@ -43,7 +41,7 @@ const formSchema = z.object({
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"], {
     error: "Please choose one of the accepts methods",
   }),
-  body: z.string({}).optional(),
+  body: z.string().optional(),
 });
 
 export type FormSchemaType = z.infer<typeof formSchema>;
@@ -51,17 +49,15 @@ export type FormSchemaType = z.infer<typeof formSchema>;
 export const HttpRequestDialog = ({
   open,
   onOpenChange,
-  defaultMethod = "GET",
-  defaultBody,
-  defaultUrl,
+  defaultValues,
   onSubmit,
 }: HttpRequestDialogProps) => {
   const form = useForm<FormSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      endpoint: defaultUrl,
-      method: defaultMethod,
-      body: defaultBody,
+      endpoint: defaultValues.endpoint || "",
+      method: defaultValues.method || "GET",
+      body: defaultValues.body || "",
     },
   });
 
@@ -76,12 +72,12 @@ export const HttpRequestDialog = ({
   useEffect(() => {
     if (open) {
       form.reset({
-        method: defaultMethod,
-        body: defaultBody,
-        endpoint: defaultUrl,
+        method: defaultValues.method || "GET",
+        body: defaultValues.body || "",
+        endpoint: defaultValues.endpoint || "",
       });
     }
-  }, [defaultBody, defaultMethod, defaultUrl, form, open]);
+  }, [defaultValues, form, open]);
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>

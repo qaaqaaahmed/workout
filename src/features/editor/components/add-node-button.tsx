@@ -1,9 +1,10 @@
 "use client";
 
+import { NodeSelector } from "@/components/node-selector";
+import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
-import { Button } from "./ui/button";
+
 import { memo, useState } from "react";
-import { NodeSelector } from "./node-selector";
 
 export const AddNodeButton = memo(() => {
   const [selectorOpen, setSelectorOpen] = useState(false);
