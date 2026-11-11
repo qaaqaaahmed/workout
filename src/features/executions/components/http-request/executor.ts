@@ -1,7 +1,9 @@
 import { NonRetriableError } from "inngest";
 import { NodeExecutor } from "../../types";
-import ky, { Options as KyOptions } from "ky";
+import ky, { HTTPError, Options as KyOptions } from "ky";
 import HandleBars from "handlebars";
+import { httpRequestChannel } from "@/inngest/channels/http-request";
+import { inngest } from "@/inngest/client";
 
 HandleBars.registerHelper("json", (context) =>
   JSON.stringify(context, null, 2),
@@ -19,67 +21,116 @@ export const httpRequestExecutor: NodeExecutor<httpRequestData> = async ({
   nodeId,
   context,
   step,
+  workflowId,
 }) => {
+  const ch = httpRequestChannel({ workflowId });
+  await step.realtime.publish(`http-request-loading-${nodeId}`, ch.status, {
+    status: "loading",
+    nodeId,
+  });
+
   let endpoint = data.endpoint;
   const variableName = data.variableName;
   const method = data.method;
   if (!endpoint) {
+    await step.realtime.publish(`http-request-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
     throw new NonRetriableError("HTTP REQUEST NODE: No endpoint configured");
   }
 
   if (!variableName) {
+    await step.realtime.publish(`http-request-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
     throw new NonRetriableError(
       "HTTP REQUEST NODE: Variable name not configured",
     );
   }
 
   if (!method) {
+    await step.realtime.publish(`http-request-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
     throw new NonRetriableError("HTTP REQUEST NODE: No method configured");
   }
-  const result = await step.run("http-request", async () => {
-    const method = data.method;
-    endpoint = HandleBars.compile(endpoint, { noEscape: true })(context);
+  try {
+    const result = await step.run("http-request", async () => {
+      const method = data.method;
+      endpoint = HandleBars.compile(endpoint, { noEscape: true })(context);
 
-    const options: KyOptions = { method };
+      const options: KyOptions = { method, retry: 0 };
 
-    if (["POST", "PUT", "PATCH"].includes(method)) {
-      const resolved = HandleBars.compile(data.body?.trim() || "{}", {
-        noEscape: true,
-      })(context);
+      if (["POST", "PUT", "PATCH"].includes(method)) {
+        const resolved = HandleBars.compile(data.body?.trim() || "{}", {
+          noEscape: true,
+        })(context);
 
-      try {
-        JSON.parse(resolved);
-      } catch {
-        throw new NonRetriableError(
-          "HTTP REQUEST NODE: Body is not a valid JSON",
-        );
+        try {
+          JSON.parse(resolved);
+        } catch {
+          throw new NonRetriableError(
+            "HTTP REQUEST NODE: Body is not a valid JSON",
+          );
+        }
+
+        options.body = resolved;
+        options.headers = {
+          "Content-Type": "application/json",
+        };
       }
 
-      options.body = resolved;
-      options.headers = {
-        "Content-Type": "application/json",
+      let response;
+      try {
+        response = await ky(endpoint, options);
+      } catch (error) {
+        const retriable4xx = [429, 408];
+        const responseStatus = 500;
+        if (
+          error instanceof HTTPError &&
+          error.response.status < responseStatus &&
+          !retriable4xx.includes(responseStatus)
+        ) {
+          throw new NonRetriableError(
+            `HTTP REQUEST NODE:${error.response.status}: ${error.response.statusText}`,
+          );
+        }
+        throw error;
+      }
+
+      const contentType = response.headers.get("content-type");
+      const responseData = contentType?.includes("application/json")
+        ? await response.json()
+        : await response.text();
+
+      const responsePayload = {
+        httpResponse: {
+          status: response.status,
+          statusText: response.statusText,
+          data: responseData,
+        },
       };
-    }
-    const response = await ky(endpoint, options);
-    const contentType = response.headers.get("content-type");
-    const responseData = contentType?.includes("application/json")
-      ? await response.json()
-      : await response.text();
 
-    const responsePayload = {
-      httpResponse: {
-        status: response.status,
-        statusText: response.statusText,
-        data: responseData,
-      },
-    };
-
-    return {
-      ...context,
-      [variableName]: responsePayload,
-    };
-  });
-  return result;
+      return {
+        ...context,
+        [variableName]: responsePayload,
+      };
+    });
+    await step.realtime.publish(`http-request-success-${nodeId}`, ch.status, {
+      status: "success",
+      nodeId,
+    });
+    return result;
+  } catch (error) {
+    await step.realtime.publish(`http-request-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
+    throw error;
+  }
 };
 
 /* 
@@ -87,13 +138,13 @@ so to summarize, user sends us the body, they can do whatver they want to send, 
  and it gives it to handlebars.compile which if it has no placeholders returns what was given to it, 
 but if it has placeholders or templates it looks up the context and returns whatever was given to it and replaces the placeholder with the [lookupValue]
  , now if you have helpers, 
- then once handlerbasrs gets the values, it passers to the helper which stringifies it. 
+ then once handlebars gets the value from the lookup, it passes to the helper which stringifies it. 
 
-then whatever the result is is saved into resolved, which is then checked by JSON.parse, to make sure that whatevr the user sent is a valid json,
+then whatever the result is, it is saved into resolved, which is then checked by JSON.parse, to make sure that whatever the user sent is a valid json,
 and btw i forgot, we add the no escape to stop the handle bars from escaping by default once the helper runs the value
- or if there are no helper when the value is returned from the look up
+ or if there are no helper when the value is returned from the look up1
 
-Before compile: data.body?.trim() || "{}", so an empty or spaces-only body becomes "{}"(handlebars only accepts a template string) which is a valid json
+Before compile: data.body?.trim() || "{}", so an empty or spaces-only body becomes "{}"(handlebars only accepts a template string) 
 After parse: if it passes, send resolved as a string with the Content-Type: application/json header. 
 If it fails, throw a NonRetriableError so Inngest doesn’t retry.
 */

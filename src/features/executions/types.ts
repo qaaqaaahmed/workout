@@ -8,6 +8,7 @@ export interface NodeExecutorParams<TData = Record<string, unknown>> {
   nodeId: string;
   context: WorkflowContext;
   step: StepTools;
+  workflowId: string;
 }
 
 export type NodeExecutor<TData = Record<string, unknown>> = (
