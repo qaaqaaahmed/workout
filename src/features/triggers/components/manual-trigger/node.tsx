@@ -7,7 +7,7 @@ import { MousePointerIcon } from "lucide-react";
 import { ManualTriggerDialog } from "./dialog";
 import { useNodeStatus } from "@/features/executions/hooks/use-node-status";
 import { useParams } from "next/navigation";
-import { fetchManualTriggerRealtimeToken } from "../../actions";
+import { fetchManualTriggerRealtimeToken } from "./actions";
 
 export const ManualTriggerNode = memo((props: NodeProps) => {
   const [dialogOpen, setDialogOpen] = useState(false);

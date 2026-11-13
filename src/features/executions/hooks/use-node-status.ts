@@ -24,6 +24,12 @@ export const useNodeStatus = ({
     topics: [topic],
     token: refreshToken,
   });
+  console.log(
+    "REALTIME: ",
+    messages.all.map(
+      (message) => `${message.data.nodeId} -> ${message.data.status}`,
+    ),
+  );
 
   const status =
     messages.all
