@@ -1,6 +1,6 @@
 import { NonRetriableError } from "inngest";
 import { NodeExecutor } from "../../types";
-import ky, { HTTPError, Options as KyOptions } from "ky";
+import ky, { HTTPError, Options as KyOptions, NetworkError } from "ky";
 import HandleBars from "handlebars";
 import { httpRequestChannel } from "@/inngest/channels/http-request";
 import { inngest } from "@/inngest/client";
@@ -16,7 +16,7 @@ type httpRequestData = {
   body?: string;
 };
 
-export const httpRequestExecutor: NodeExecutor<httpRequestData> = async ({
+export const HttpRequestExecutor: NodeExecutor<httpRequestData> = async ({
   data,
   nodeId,
   context,
@@ -92,12 +92,13 @@ export const httpRequestExecutor: NodeExecutor<httpRequestData> = async ({
         if (
           error instanceof HTTPError &&
           error.response.status < responseStatus &&
-          !retriable4xx.includes(responseStatus)
+          !retriable4xx.includes(error.response.status)
         ) {
           throw new NonRetriableError(
             `HTTP REQUEST NODE:${error.response.status}: ${error.response.statusText}`,
           );
         }
+
         throw error;
       }
 
@@ -125,6 +126,7 @@ export const httpRequestExecutor: NodeExecutor<httpRequestData> = async ({
     });
     return result;
   } catch (error) {
+    console.log("OUTER ERROR:::::::::------->", error);
     await step.realtime.publish(`http-request-error-${nodeId}`, ch.status, {
       status: "error",
       nodeId,

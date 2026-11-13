@@ -12,3 +12,5 @@ procs:
 
   next:
     cmd: ["cmd.exe", "/c", "npm", "run", "dev"]
+  ngrok:
+    cmd: ["cmd.exe", "/c", "npm", "run", "ngrok:dev"]
