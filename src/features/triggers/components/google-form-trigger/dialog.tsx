@@ -122,8 +122,9 @@ export const GoogleFormTriggerDialog = ({
 
               <li>
                 <code className="bg-background px-1 py-0.5 rounded">
-                  {"{{json googleForm.responses}}"} - All responses as JSON
+                  {"{{json googleForm.responses}}"}
                 </code>
+                - All responses as JSON
               </li>
             </ul>
           </div>

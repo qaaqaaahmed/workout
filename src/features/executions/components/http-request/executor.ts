@@ -126,7 +126,6 @@ export const HttpRequestExecutor: NodeExecutor<httpRequestData> = async ({
     });
     return result;
   } catch (error) {
-    console.log("OUTER ERROR:::::::::------->", error);
     await step.realtime.publish(`http-request-error-${nodeId}`, ch.status, {
       status: "error",
       nodeId,
