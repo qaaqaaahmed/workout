@@ -1,0 +1,168 @@
+"use client";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { z } from "zod/v4";
+
+interface OpenaiDialogProps {
+  open: boolean;
+  onOpenChange: (value: boolean) => void;
+  defaultValues: Partial<FormSchemaType>;
+  onSubmit: (values: FormSchemaType) => void;
+}
+
+const formSchema = z.object({
+  variableName: z
+    .string()
+    .min(1, { error: "Variable Name is required" })
+    .regex(/^[A-Za-z_$][A-Za-z0-9_$]*$/, {
+      error:
+        "Variable Name must start with a letter an underscore or $ and must contain only a letter, a number or an underscore or $",
+    }),
+  systemPrompt: z.string().optional(),
+  userPrompt: z.string().min(1, { error: "User Prompt is required" }),
+});
+
+export type FormSchemaType = z.infer<typeof formSchema>;
+
+export const OpenaiDialog = ({
+  open,
+  onOpenChange,
+  defaultValues,
+  onSubmit,
+}: OpenaiDialogProps) => {
+  const form = useForm<FormSchemaType>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      systemPrompt: defaultValues.systemPrompt || "",
+      userPrompt: defaultValues.userPrompt || "",
+      variableName: defaultValues.variableName || "",
+    },
+  });
+
+  const watchVariableName = form.watch("variableName") || "myOpenai";
+
+  const handleSubmit = (values: FormSchemaType) => {
+    onSubmit(values);
+    onOpenChange(false);
+  };
+
+  useEffect(() => {
+    if (open) {
+      form.reset({
+        variableName: defaultValues.variableName || "",
+        userPrompt: defaultValues.userPrompt || "",
+        systemPrompt: defaultValues.systemPrompt || "",
+      });
+    }
+  }, [defaultValues, form, open]);
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Openai Configurations</DialogTitle>
+          <DialogDescription>
+            Configure the ai model for this node
+          </DialogDescription>
+        </DialogHeader>
+
+        <Form {...form}>
+          <form
+            className="space-y-8 mt-4"
+            onSubmit={form.handleSubmit(handleSubmit)}
+          >
+            <FormField
+              name="variableName"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Variable Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="myOpenai" {...field} />
+                  </FormControl>
+                  <FormDescription>
+                    Use this name to reference the result in other nodes.{" "}
+                    {`{{${watchVariableName}.aiResponse}}`}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="systemPrompt"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>System Prompt (Optional)</FormLabel>
+
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      className="min-h-[80px] font-mono text-sm"
+                      placeholder="You are a helful assistant"
+                    />
+                  </FormControl>
+
+                  <FormDescription>
+                    Sets the behavior of the model. Use {"{{variables}}"} for
+                    simple values or {"{{json variable}}"} to stringify objects
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="userPrompt"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>User Prompt (Required)</FormLabel>
+
+                  <FormControl>
+                    <Textarea
+                      {...field}
+                      className="min-h-[120px] font-mono text-sm"
+                      placeholder={`Summarize this text: {{json myOpenai.data}}`}
+                    />
+                  </FormControl>
+
+                  <FormDescription>
+                    The prompt to send to the ai. Use {"{{variables}}"} for
+                    simple values or {"{{json variable}}"} to stringify objects
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <DialogFooter className="mt-4">
+              <Button type="submit">Save</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+  );
+};

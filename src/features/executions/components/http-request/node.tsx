@@ -7,7 +7,7 @@ import { GlobeIcon } from "lucide-react";
 import { FormSchemaType, HttpRequestDialog } from "./dialog";
 import { useNodeStatus } from "../../hooks/use-node-status";
 import { useParams } from "next/navigation";
-import { fetchHttpRequestRealtimeToken } from "../../actions";
+import { fetchHttpRequestRealtimeToken } from "./actions";
 
 // type HttpRequestNodeData = {
 //   variableName?: string;
