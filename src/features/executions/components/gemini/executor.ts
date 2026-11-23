@@ -4,6 +4,7 @@ import HandleBars from "handlebars";
 import { geminiChannel } from "@/inngest/channels/gemini";
 import { createGoogleGenerativeAI } from "@ai-sdk/google";
 import { generateText } from "ai";
+import prisma from "@/lib/db";
 
 HandleBars.registerHelper("json", (context) =>
   JSON.stringify(context, null, 2),
@@ -11,6 +12,7 @@ HandleBars.registerHelper("json", (context) =>
 
 type geminiData = {
   variableName?: string;
+  credentialId?: string;
   systemPrompt?: string;
   userPrompt?: string;
 };
@@ -46,6 +48,15 @@ export const GeminiExecutor: NodeExecutor<geminiData> = async ({
     throw new NonRetriableError("GEMINI NODE ERROR: Variable name is missing");
   }
 
+  if (!data.credentialId) {
+    await step.realtime.publish(`gemini-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
+
+    throw new NonRetriableError("GEMINI NODE ERROR: CredentialID is missing");
+  }
+
   const systemPrompt = data.systemPrompt
     ? HandleBars.compile(data.systemPrompt, {
         noEscape: true,
@@ -55,10 +66,24 @@ export const GeminiExecutor: NodeExecutor<geminiData> = async ({
     context,
   );
 
-  const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY!;
+  const credential = await step.run(`get-credential-${nodeId}`, () => {
+    return prisma.credential.findUnique({
+      where: { id: data.credentialId },
+    });
+  });
 
-  const google = createGoogleGenerativeAI({ apiKey });
-  //TODO: Fetch credentials
+  if (!credential) {
+    await step.realtime.publish(`gemini-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
+    throw new NonRetriableError(
+      "GEMINI NODE ERROR: Could not find credential in DB",
+    );
+  }
+
+  const google = createGoogleGenerativeAI({ apiKey: credential.value });
+
   try {
     const { steps } = await step.ai.wrap(
       `gemini-generate-text-${nodeId}`,

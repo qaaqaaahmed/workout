@@ -1,10 +1,6 @@
 // src/inngest/functions.ts
 import prisma from "@/lib/db";
 import { inngest } from "./client";
-import { generateText } from "ai";
-import { createGoogleGenerativeAI } from "@ai-sdk/google";
-import { createOpenAI } from "@ai-sdk/openai";
-import { createAnthropic } from "@ai-sdk/anthropic";
 
 import * as Sentry from "@sentry/nextjs";
 import { NonRetriableError } from "inngest";

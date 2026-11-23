@@ -1,9 +1,8 @@
 import { NonRetriableError } from "inngest";
 import { NodeExecutor } from "../../types";
-import ky, { HTTPError, Options as KyOptions, NetworkError } from "ky";
+import ky, { HTTPError, Options as KyOptions } from "ky";
 import HandleBars from "handlebars";
 import { httpRequestChannel } from "@/inngest/channels/http-request";
-import { inngest } from "@/inngest/client";
 
 HandleBars.registerHelper("json", (context) =>
   JSON.stringify(context, null, 2),
