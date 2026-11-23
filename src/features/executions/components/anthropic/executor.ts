@@ -4,6 +4,7 @@ import HandleBars from "handlebars";
 import { generateText } from "ai";
 import { createAnthropic } from "@ai-sdk/anthropic";
 import { anthropicChannel } from "@/inngest/channels/anthropic";
+import prisma from "@/lib/db";
 
 HandleBars.registerHelper("json", (context) =>
   JSON.stringify(context, null, 2),
@@ -11,6 +12,7 @@ HandleBars.registerHelper("json", (context) =>
 
 type AnthropicData = {
   variableName?: string;
+  credentialId?: string;
   systemPrompt?: string;
   userPrompt?: string;
 };
@@ -48,6 +50,16 @@ export const AnthropicExecutor: NodeExecutor<AnthropicData> = async ({
     );
   }
 
+  if (!data.credentialId) {
+    await step.realtime.publish(`anthropic-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
+
+    throw new NonRetriableError(
+      "Anthropic NODE ERROR: CredentialID is missing",
+    );
+  }
   const systemPrompt = data.systemPrompt
     ? HandleBars.compile(data.systemPrompt, {
         noEscape: true,
@@ -57,9 +69,24 @@ export const AnthropicExecutor: NodeExecutor<AnthropicData> = async ({
     context,
   );
 
-  const apiKey = process.env.Anthropic_API_KEY!;
+  const credential = await step.run(`get-credential-${nodeId}`, () => {
+    return prisma.credential.findUnique({
+      where: { id: data.credentialId },
+    });
+  });
 
-  const anthropic = createAnthropic({ apiKey });
+  if (!credential) {
+    await step.realtime.publish(`anthropic-error-${nodeId}`, ch.status, {
+      status: "error",
+      nodeId,
+    });
+
+    throw new NonRetriableError(
+      "Anthropic NODE ERROR: Could not find credential in DB",
+    );
+  }
+
+  const anthropic = createAnthropic({ apiKey: credential.value });
   //TODO: Fetch credentials
   try {
     const { steps } = await step.ai.wrap(

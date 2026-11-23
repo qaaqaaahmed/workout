@@ -25,6 +25,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   workflows     Workflow[]
+  credentials   Credential[]
 
   @@unique([email])
   @@map("user")
@@ -120,6 +121,8 @@ model Node {
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  credentialId String?
+  credential Credential? @relation(fields: [credentialId], references: [id], onDelete: SetNull)
 }
 
 model Connection {
@@ -140,4 +143,24 @@ model Connection {
   updatedAt DateTime @updatedAt
 
   @@unique([fromNodeId, toNodeId, fromOutput, toInput])
+}
+
+model Credential {
+  id String @id @default(cuid())
+  name String
+  type CredentialType
+  value String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user  User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  nodes Node[]
+}
+
+enum CredentialType {
+  OPENAI
+  GEMINI
+  ANTHROPIC
 }

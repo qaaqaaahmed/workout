@@ -18,8 +18,18 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { useGetCredentialsByType } from "@/features/credentials/hooks/use-credentials";
+import { CredentialType } from "@/generated/prisma/enums";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Image from "next/image";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod/v4";
@@ -39,6 +49,7 @@ const formSchema = z.object({
       error:
         "Variable Name must start with a letter an underscore or $ and must contain only a letter, a number or an underscore or $",
     }),
+  credentialId: z.string().min(1, { error: "CredentialID is required" }),
   systemPrompt: z.string().optional(),
   userPrompt: z.string().min(1, { error: "User Prompt is required" }),
 });
@@ -51,6 +62,8 @@ export const AnthropicDialog = ({
   defaultValues,
   onSubmit,
 }: AnthropicDialogProps) => {
+  const { data: credentials, isLoading: isLoadingCredentials } =
+    useGetCredentialsByType(CredentialType.ANTHROPIC);
   const form = useForm<FormSchemaType>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -104,6 +117,44 @@ export const AnthropicDialog = ({
                     Use this name to reference the result in other nodes.{" "}
                     {`{{${watchVariableName}.aiResponse}}`}
                   </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              name="credentialId"
+              control={form.control}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Anthropic Credentials</FormLabel>
+                  <Select
+                    defaultValue={field.value}
+                    onValueChange={field.onChange}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="select a credential" />
+                      </SelectTrigger>
+                    </FormControl>
+
+                    <SelectContent>
+                      {credentials?.map((credential) => (
+                        <SelectItem key={credential.id} value={credential.id}>
+                          <div className="flex items-center gap-2">
+                            <Image
+                              src={`/logos/anthropic.svg`}
+                              alt={CredentialType.ANTHROPIC}
+                              width={16}
+                              height={16}
+                            />
+
+                            {credential.name}
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage />
                 </FormItem>
               )}
